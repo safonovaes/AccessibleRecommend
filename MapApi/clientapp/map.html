@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Карта доступности</title>
+  <link rel="stylesheet" href="./css/styles.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
+  <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+
+</head>
+
+<body>
+  <div class="top-bar">
+    <div class="logo">
+      <img src="Dostupnaya_sreda.png" alt="Логотип" class="logo-image">
+    </div>
+    <h1 class="mainZag">Сделаем с Вами мир доступнее</h1>
+    <div class="login-icon">
+      <a href="/clientapp/authorization.html" id="logoutButton">Выйти</a>
+      <button id="accessibilityButton">Версия для слабовидящих</button>
+    </div>
+  </div>
+
+  <header>
+    <nav>
+      <ul class="menuUpper">
+        <li><a href="/clientapp/map.html">Карта доступности</a></li>
+        <li><a href="/clientapp/moderation.html">Добавить информацию</a></li>
+        <li><a href="/clientapp/edit.html">Редактировать информацию</a></li>
+        <li><a href="/clientapp/about.html">О проекте</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="content-map">
+    <div class="toolbar">
+      <div class="toolbar-header">
+        <div class="menu-icon" onclick="openMenu()">☰</div>
+      </div>
+      <div class="toolbar-content" id="toolbar-content">
+        <h3>Поиск объекта</h3>
+        <form onsubmit="event.preventDefault();" role="search">
+          <input id="search" type="search" placeholder="Найти объект..." autofocus required />
+          <button id="load-comments-of-search" type="submit">Найти</button>
+        </form>
+        <div id="search-results" style="margin-top: 10px;"></div>
+      </div>
+      <div class="toolbar-content hidden" id="toolbar-content-2">
+        <h3>Проложить маршрут</h3>
+        <br>
+        <p class="route">Укажите, откуда Вы начнете свой маршрут:</p>
+        <div class="search-container">
+          <input type="text" id="addressX" class="search-input" placeholder="Откуда">
+          <div id="suggestionsX" class="search-suggestions"></div>
+        </div>
+        <br>
+
+        <p class="route">Укажите, куда Вы отправитесь:</p>
+        <div class="search-container">
+          <input type="text" id="addressY" class="search-input" placeholder="Куда">
+          <div id="suggestionsY" class="search-suggestions"></div>
+        </div>
+        <br>
+        <p class="route">Каким образом Вы собираетесь добраться:</p>
+        <select id="typeRoute" name="type" required>
+          <option value="Пешком">Пешком</option>
+          <option value="Общественным транспортом">Общественным транспортом</option>
+          <option value="На машине">На машине</option>
+        </select><br><br>
+        <div class="buttons">
+          <button id="route">Проложить</button>
+        </div>
+
+      </div>
+      <div class="toolbar-content hidden" id="toolbar-content-3">
+        <h3>Что Вам стоит посетить?</h3>
+        <div class="buttons">
+          <button class="toggle-button" onclick="toggleFilter()">Отфильтровать</button>
+          <button class="toggle-button" onclick="sortRecommendationsByDistance()">Отсортировать</button>
+        </div>
+        <div id="recommendations-container">
+        </div>
+
+      </div>
+
+      <div class="toolbar-content hidden" id="toolbar-content-4">
+        <h3>Что стоит посетить по мнению общества?</h3>
+        <div class="buttons">
+          <button class="toggle-button" onclick="toggleFilter()">Отфильтровать</button>
+          <button class="toggle-button" onclick="sortRecommendationsByDistance()">Отсортировать</button>
+        </div>
+        <div id="recommendations-container-pop">
+        </div>
+
+      </div>
+
+      <div class="toolbar-content hidden" id="toolbar-content-5">
+        <h3>Избранное</h3>
+        <div id="likes-container">
+        </div>
+
+      </div>
+
+    </div>
+    <div class="details-container hidden" id="details-container">
+      <div class="menu-header">
+        <span class="close-icon" onclick="closeDetails()">✖</span>
+      </div>
+      <div class="details-content" id="details-content">
+      </div>
+    </div>
+    <div class="slide-menu hidden">
+      <div class="menu-header">
+        <span class="close-icon" onclick="closeMenu()">✖</span>
+      </div>
+      <div class="menu-content">
+        <h5>Меню:</h5>
+        <ul>
+          <li>
+            <button onclick="showBlock('toolbar-content')">Поиск объекта</button>
+          </li>
+          <li>
+            <button onclick="showBlock('toolbar-content-3')">Что Вам стоит посетить?</button>
+          </li>
+          <li>
+            <button onclick="showBlock('toolbar-content-4')">Что стоит посетить по мнению общества?</button>
+          </li>
+          <li>
+            <button onclick="showBlock('toolbar-content-5')">Избранное</button>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="filter-container hidden" id="toolbar-filter">
+      <div class="filter-header">
+        <span class="close-icon" onclick="closeFilter()">✖</span>
+      </div>
+      <div class="filter-content">
+        <form id="filterForm">
+          <div class="checkbox-container">
+            <h3>Доступен:</h3>
+            <label class="checkbox-label">
+              <input type="checkbox" name="categories" value="категория_Г"> Для людей с нарушением слуха
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" name="categories" value="категория_К"> Для инвалидов, передвигающихся на коляске
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" name="categories" value="категория_О"> Для людей с нарушением опорнодвигательного
+              аппарата
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" name="categories" value="категория_С"> Для людей с нарушением зрения
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" name="categories" value="категория_У"> Для людей с нарушением умственного развития
+            </label>
+            <br>
+            <h3>Элементы доступной среды:</h3>
+            <div id="accessibilityContainer"></div>
+          </div>
+          <div class="buttons">
+            <button id="filterButton" type="button" onclick="fetchRecommendationsFiltering()">Применить фильтр</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div style="position: relative; height: 100%; width: 60%;">
+      <div id="map">
+
+      </div>
+      <div id="categoriesButton">
+        <button class="categoriesButton" value="Красота">Красота 💅</button>
+        <button class="categoriesButton" value="Культура">Культура 🎥</button>
+        <button class="categoriesButton" value="Поесть">Поесть 🍔</button>
+        <button class="categoriesButton" value="Шопинг">Шопинг 🛒</button>
+        <button class="categoriesButton" value="Туризм">Туризм 🔭</button>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>
+    <p>Контактная информация: 123-456-7890 | email@example.com</p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+  <script src="./js/current_user.js"></script>
+  <script src="./js/map.js"></script>
+</body>
+
+</html>
